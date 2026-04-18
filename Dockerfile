@@ -39,6 +39,7 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
+COPY scripts ./scripts
 
 RUN npm run build \
   && npm prune --omit=dev \
@@ -46,7 +47,7 @@ RUN npm run build \
   && chown -R node:node /app
 
 USER node
-RUN npx remotion browser ensure
+RUN node scripts/ensure-browser.mjs
 
 EXPOSE 4788
 
