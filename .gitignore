@@ -1,0 +1,6 @@
+node_modules/
+dist/
+data/jobs/*.json
+public/media/*.mp4
+public/media/*.jpg
+public/media/*.png
