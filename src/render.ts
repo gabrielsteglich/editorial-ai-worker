@@ -146,6 +146,7 @@ export const renderSocialArt = async (jobId: string, input: SocialArtInput, publ
     });
     const extension = 'vertical' === format ? 'jpg' : 'png';
     const outputLocation = path.join(mediaDir, `${jobId}-${format}.${extension}`);
+    const imageFormat = 'vertical' === format ? 'jpeg' : 'png';
 
     await renderStill({
       composition,
@@ -153,8 +154,8 @@ export const renderSocialArt = async (jobId: string, input: SocialArtInput, publ
       inputProps: {...normalizedInput, format},
       output: outputLocation,
       frame: 0,
-      imageFormat: 'vertical' === format ? 'jpeg' : 'png',
-      jpegQuality: 90,
+      imageFormat,
+      ...('jpeg' === imageFormat ? {jpegQuality: 90} : {}),
     });
 
     const base = publicBaseUrl.replace(/\/$/, '');
