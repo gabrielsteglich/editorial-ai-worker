@@ -43,10 +43,8 @@ COPY scripts ./scripts
 
 RUN npm run build \
   && npm prune --omit=dev \
-  && mkdir -p /app/data/jobs /app/public/media \
-  && chown -R node:node /app
+  && mkdir -p /app/data/jobs /app/public/media
 
-USER node
 RUN node scripts/ensure-browser.mjs
 
 EXPOSE 4788
