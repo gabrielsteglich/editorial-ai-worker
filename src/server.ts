@@ -236,6 +236,6 @@ app.get('/jobs/:id', requireApiKey, async (request, response) => {
 });
 
 await ensureStorage();
-app.listen(port, '127.0.0.1', () => {
-  console.log(`TDDR video renderer listening on http://127.0.0.1:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`TDDR video renderer listening on http://0.0.0.0:${port}`);
 });
