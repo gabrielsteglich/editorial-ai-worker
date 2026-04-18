@@ -51,6 +51,10 @@ const sanitizeInput = (raw: unknown): RenderInput | null => {
   }
 
   const input = raw as Partial<RenderInput>;
+  const requestedMaxScenes = Number(input.maxScenes || 5);
+  const maxScenes = Number.isFinite(requestedMaxScenes)
+    ? Math.max(3, Math.min(8, Math.floor(requestedMaxScenes)))
+    : 5;
   const scenes = Array.isArray(input.scenes)
     ? input.scenes
         .filter((scene) => scene && typeof scene.title === 'string' && typeof scene.body === 'string')
@@ -58,8 +62,16 @@ const sanitizeInput = (raw: unknown): RenderInput | null => {
           title: String(scene.title).slice(0, 120),
           body: String(scene.body).slice(0, 320),
         }))
-        .slice(0, 8)
+        .slice(0, maxScenes)
     : [];
+  const allowedTemplates: NonNullable<RenderInput['template']>[] = ['editorial_astro', 'cover_topics', 'narrated_script'];
+  const allowedSceneSources: NonNullable<RenderInput['sceneSource']>[] = ['auto', 'carousel', 'reel_script', 'article_summary'];
+  const template = allowedTemplates.includes(input.template as NonNullable<RenderInput['template']>)
+    ? input.template as NonNullable<RenderInput['template']>
+    : 'editorial_astro';
+  const sceneSource = allowedSceneSources.includes(input.sceneSource as NonNullable<RenderInput['sceneSource']>)
+    ? input.sceneSource as NonNullable<RenderInput['sceneSource']>
+    : 'auto';
 
   if (!input.title || scenes.length === 0) {
     return null;
@@ -73,6 +85,9 @@ const sanitizeInput = (raw: unknown): RenderInput | null => {
     brand: input.brand ? String(input.brand).slice(0, 80) : 'Toque de Despertar',
     durationSeconds: Number.isFinite(Number(input.durationSeconds)) ? Number(input.durationSeconds) : 30,
     audioUrl: input.audioUrl ? String(input.audioUrl).slice(0, 600) : '',
+    template,
+    sceneSource,
+    maxScenes,
     hashtags: Array.isArray(input.hashtags)
       ? input.hashtags.map((tag) => String(tag).slice(0, 48)).slice(0, 10)
       : [],

@@ -13,7 +13,8 @@ import type {RenderInput, VideoScene} from '../types.js';
 const safeScenes = (input: RenderInput): VideoScene[] => {
   const scenes = Array.isArray(input.scenes) ? input.scenes : [];
   if (scenes.length > 0) {
-    return scenes.slice(0, 8);
+    const maxScenes = Math.max(3, Math.min(8, Number(input.maxScenes || 5)));
+    return scenes.slice(0, maxScenes);
   }
 
   return [
@@ -24,11 +25,32 @@ const safeScenes = (input: RenderInput): VideoScene[] => {
   ];
 };
 
+const videoTemplate = (input: RenderInput) => {
+  if ('cover_topics' === input.template || 'narrated_script' === input.template) {
+    return input.template;
+  }
+
+  return 'editorial_astro';
+};
+
+const templateBackground = (template: string) => {
+  if ('cover_topics' === template) {
+    return 'radial-gradient(circle at 18% 18%, rgba(245,213,111,0.36) 0, transparent 22%), linear-gradient(155deg, #070707 0%, #172017 44%, #725b28 100%)';
+  }
+
+  if ('narrated_script' === template) {
+    return 'radial-gradient(circle at 82% 12%, rgba(185,221,204,0.28) 0, transparent 20%), linear-gradient(165deg, #101416 0%, #213530 48%, #121212 100%)';
+  }
+
+  return 'radial-gradient(circle at 20% 15%, #f5d56f 0, transparent 20%), linear-gradient(150deg, #151515 0%, #19352c 45%, #5c3159 100%)';
+};
+
 const SceneCard: React.FC<{
   scene: VideoScene;
   index: number;
   active: boolean;
-}> = ({scene, index, active}) => {
+  template: string;
+}> = ({scene, index, active, template}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const entrance = spring({
@@ -50,18 +72,38 @@ const SceneCard: React.FC<{
         inset: 0,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        gap: 30,
-        padding: '0 82px',
+        justifyContent: 'cover_topics' === template ? 'flex-end' : 'center',
+        gap: 'narrated_script' === template ? 24 : 30,
+        padding: 'cover_topics' === template ? '0 82px 330px' : 'narrated_script' === template ? '0 72px 250px' : '0 82px',
       }}
     >
+      {'cover_topics' === template ? (
+        <div
+          style={{
+            width: 84,
+            height: 84,
+            borderRadius: 999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(245,213,111,0.92)',
+            color: '#17150d',
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontWeight: 900,
+            fontSize: 34,
+            marginBottom: 8,
+          }}
+        >
+          {String(index + 1).padStart(2, '0')}
+        </div>
+      ) : null}
       <div
         style={{
           color: '#f8f6ee',
           fontFamily: 'Arial, Helvetica, sans-serif',
           fontWeight: 800,
-          fontSize: 78,
-          lineHeight: 1.02,
+          fontSize: 'narrated_script' === template ? 56 : 'cover_topics' === template ? 86 : 78,
+          lineHeight: 'narrated_script' === template ? 1.08 : 1.02,
           letterSpacing: 0,
           textShadow: '0 6px 24px rgba(0,0,0,0.42)',
         }}
@@ -72,8 +114,8 @@ const SceneCard: React.FC<{
         style={{
           color: '#f3eee2',
           fontFamily: 'Arial, Helvetica, sans-serif',
-          fontSize: 43,
-          lineHeight: 1.18,
+          fontSize: 'narrated_script' === template ? 48 : 43,
+          lineHeight: 'narrated_script' === template ? 1.22 : 1.18,
           letterSpacing: 0,
           textShadow: '0 5px 18px rgba(0,0,0,0.36)',
         }}
@@ -88,6 +130,7 @@ export const AstroSocialVideo: React.FC<RenderInput> = (input) => {
   const frame = useCurrentFrame();
   const {durationInFrames, fps} = useVideoConfig();
   const scenes = safeScenes(input);
+  const template = videoTemplate(input);
   const sceneLength = Math.max(1, Math.floor(durationInFrames / scenes.length));
   const activeScene = Math.min(scenes.length - 1, Math.floor(frame / sceneLength));
   const backgroundShift = interpolate(
@@ -105,8 +148,7 @@ export const AstroSocialVideo: React.FC<RenderInput> = (input) => {
   return (
     <AbsoluteFill
       style={{
-        background:
-          'radial-gradient(circle at 20% 15%, #f5d56f 0, transparent 20%), linear-gradient(150deg, #151515 0%, #19352c 45%, #5c3159 100%)',
+        background: templateBackground(template),
         overflow: 'hidden',
       }}
     >
@@ -146,6 +188,7 @@ export const AstroSocialVideo: React.FC<RenderInput> = (input) => {
           scene={scene}
           index={index}
           active={index === activeScene}
+          template={template}
         />
       ))}
 

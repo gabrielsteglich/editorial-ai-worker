@@ -3,7 +3,7 @@ import {bundle} from '@remotion/bundler';
 import {renderMedia, renderStill, selectComposition} from '@remotion/renderer';
 import {mediaDir, remotionEntry} from './paths.js';
 import {ensureStorage, readJob, updateJob} from './storage.js';
-import type {RenderInput, SocialArtFormat, SocialArtInput, SocialArtResult} from './types.js';
+import type {RenderInput, SocialArtFormat, SocialArtInput, SocialArtResult, VideoSceneSource, VideoTemplate} from './types.js';
 
 const compositionId = 'AstroSocialVideo';
 const socialArtCompositionIds: Record<SocialArtFormat, string> = {
@@ -23,11 +23,18 @@ const webpackOverride = (config: any) => ({
 });
 
 const normalizeInput = (input: RenderInput): RenderInput => {
+  const maxScenes = Math.max(3, Math.min(8, Number(input.maxScenes || 5)));
   const scenes = Array.isArray(input.scenes)
     ? input.scenes
         .filter((scene) => scene && typeof scene.title === 'string' && typeof scene.body === 'string')
-        .slice(0, 8)
+        .slice(0, maxScenes)
     : [];
+  const template = ['editorial_astro', 'cover_topics', 'narrated_script'].includes(String(input.template))
+    ? input.template as VideoTemplate
+    : 'editorial_astro';
+  const sceneSource = ['auto', 'carousel', 'reel_script', 'article_summary'].includes(String(input.sceneSource))
+    ? input.sceneSource as VideoSceneSource
+    : 'auto';
 
   return {
     title: input.title || 'Céu do momento',
@@ -38,6 +45,9 @@ const normalizeInput = (input: RenderInput): RenderInput => {
     hashtags: Array.isArray(input.hashtags) ? input.hashtags.slice(0, 8) : [],
     postId: input.postId,
     audioUrl: input.audioUrl || '',
+    template,
+    sceneSource,
+    maxScenes,
     scenes: scenes.length > 0 ? scenes : [{title: input.title || 'Céu do momento', body: input.caption || ''}],
   };
 };

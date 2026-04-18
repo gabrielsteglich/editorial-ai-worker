@@ -11,6 +11,9 @@ const defaultProps: RenderInput = {
   brand: 'Toque de Despertar',
   durationSeconds: 30,
   audioUrl: '',
+  template: 'editorial_astro',
+  sceneSource: 'auto',
+  maxScenes: 5,
   scenes: [
     {
       title: 'Céu do momento',

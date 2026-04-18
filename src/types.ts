@@ -3,6 +3,9 @@ export type VideoScene = {
   body: string;
 };
 
+export type VideoTemplate = 'editorial_astro' | 'cover_topics' | 'narrated_script';
+export type VideoSceneSource = 'auto' | 'carousel' | 'reel_script' | 'article_summary';
+
 export type RenderInput = {
   postId?: number;
   title: string;
@@ -13,6 +16,9 @@ export type RenderInput = {
   hashtags?: string[];
   durationSeconds?: number;
   audioUrl?: string;
+  template?: VideoTemplate;
+  sceneSource?: VideoSceneSource;
+  maxScenes?: number;
 };
 
 export type RenderJobStatus = 'queued' | 'rendering' | 'completed' | 'failed';
