@@ -3,12 +3,13 @@ import {bundle} from '@remotion/bundler';
 import {renderMedia, renderStill, selectComposition} from '@remotion/renderer';
 import {mediaDir, remotionEntry} from './paths.js';
 import {ensureStorage, readJob, updateJob} from './storage.js';
-import type {RenderInput, SocialArtFormat, SocialArtInput, SocialArtResult, VideoSceneSource, VideoTemplate} from './types.js';
+import type {RenderInput, SocialArtFormat, SocialArtInput, SocialArtResult, SocialArtSlide, VideoSceneSource, VideoTemplate} from './types.js';
 
 const compositionId = 'AstroSocialVideo';
 const socialArtCompositionIds: Record<SocialArtFormat, string> = {
   square: 'SocialArtSquare',
   vertical: 'SocialArtVertical',
+  portrait: 'SocialArtPortrait',
 };
 
 const webpackOverride = (config: any) => ({
@@ -45,6 +46,8 @@ const normalizeInput = (input: RenderInput): RenderInput => {
     hashtags: Array.isArray(input.hashtags) ? input.hashtags.slice(0, 8) : [],
     postId: input.postId,
     audioUrl: input.audioUrl || '',
+    musicUrl: input.musicUrl || '',
+    musicVolume: Math.max(0, Math.min(0.6, Number(input.musicVolume ?? 0.18))),
     template,
     sceneSource,
     maxScenes,
@@ -111,8 +114,13 @@ export const renderVideo = async (jobId: string, input: RenderInput, publicBaseU
 const normalizeSocialArtInput = (input: SocialArtInput): SocialArtInput => {
   const defaultFormats: SocialArtFormat[] = ['square', 'vertical'];
   const formats: SocialArtFormat[] = Array.isArray(input.formats) && input.formats.length > 0
-    ? input.formats.filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format)
+    ? input.formats.filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format || 'portrait' === format)
     : defaultFormats;
+  const slides: SocialArtSlide[] = Array.isArray(input.slides)
+    ? input.slides
+        .filter((slide) => slide && typeof slide.title === 'string' && typeof slide.body === 'string')
+        .slice(0, 10)
+    : [];
 
   return {
     postId: input.postId,
@@ -123,6 +131,10 @@ const normalizeSocialArtInput = (input: SocialArtInput): SocialArtInput => {
     brand: input.brand || 'Toque de Despertar',
     formats: formats.length > 0 ? Array.from(new Set(formats)) : defaultFormats,
     template: input.template || 'editorial-cover-v1',
+    slides,
+    layout: input.layout || 'cover',
+    slideIndex: Number(input.slideIndex || 0),
+    slideCount: Number(input.slideCount || slides.length || 1),
   };
 };
 
@@ -144,9 +156,9 @@ export const renderSocialArt = async (jobId: string, input: SocialArtInput, publ
       id: socialArtCompositionIds[format],
       inputProps: {...normalizedInput, format},
     });
-    const extension = 'vertical' === format ? 'jpg' : 'png';
+    const extension = 'jpg';
     const outputLocation = path.join(mediaDir, `${jobId}-${format}.${extension}`);
-    const imageFormat = 'vertical' === format ? 'jpeg' : 'png';
+    const imageFormat = 'jpeg';
 
     await renderStill({
       composition,
@@ -155,7 +167,7 @@ export const renderSocialArt = async (jobId: string, input: SocialArtInput, publ
       output: outputLocation,
       frame: 0,
       imageFormat,
-      ...('jpeg' === imageFormat ? {jpegQuality: 90} : {}),
+      jpegQuality: 90,
     });
 
     const base = publicBaseUrl.replace(/\/$/, '');
@@ -164,6 +176,38 @@ export const renderSocialArt = async (jobId: string, input: SocialArtInput, publ
     }
     if ('vertical' === format) {
       result.verticalUrl = `${base}/media/${jobId}-${format}.${extension}`;
+    }
+  }
+
+  if (normalizedInput.slides && normalizedInput.slides.length > 0) {
+    result.carouselUrls = [];
+    const base = publicBaseUrl.replace(/\/$/, '');
+    const composition = await selectComposition({
+      serveUrl,
+      id: socialArtCompositionIds.portrait,
+      inputProps: {...normalizedInput, format: 'portrait'},
+    });
+
+    for (const [index, slide] of normalizedInput.slides.entries()) {
+      const outputLocation = path.join(mediaDir, `${jobId}-carousel-${index + 1}.jpg`);
+      await renderStill({
+        composition,
+        serveUrl,
+        inputProps: {
+          ...normalizedInput,
+          format: 'portrait',
+          layout: 'narrative',
+          slideIndex: index,
+          slideCount: normalizedInput.slides.length,
+          title: slide.title,
+          subtitle: slide.body,
+        },
+        output: outputLocation,
+        frame: 0,
+        imageFormat: 'jpeg',
+        jpegQuality: 90,
+      });
+      result.carouselUrls.push(`${base}/media/${jobId}-carousel-${index + 1}.jpg`);
     }
   }
 

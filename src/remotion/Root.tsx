@@ -11,6 +11,8 @@ const defaultProps: RenderInput = {
   brand: 'Toque de Despertar',
   durationSeconds: 30,
   audioUrl: '',
+  musicUrl: '',
+  musicVolume: 0.18,
   template: 'editorial_astro',
   sceneSource: 'auto',
   maxScenes: 5,
@@ -22,7 +24,7 @@ const defaultProps: RenderInput = {
   ],
 };
 
-const defaultSocialArtProps: SocialArtInput & {format: 'square' | 'vertical'} = {
+const defaultSocialArtProps: SocialArtInput & {format: 'square' | 'vertical' | 'portrait'} = {
   postId: 0,
   baseImageUrl: 'https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg',
   title: 'Céu do momento',
@@ -67,6 +69,15 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={{...defaultSocialArtProps, format: 'vertical'}}
+      />
+      <Composition
+        id="SocialArtPortrait"
+        component={SocialArtCover}
+        durationInFrames={1}
+        fps={30}
+        width={1080}
+        height={1350}
+        defaultProps={{...defaultSocialArtProps, format: 'portrait'}}
       />
     </>
   );

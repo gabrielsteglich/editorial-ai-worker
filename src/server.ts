@@ -3,7 +3,7 @@ import express from 'express';
 import {mediaDir} from './paths.js';
 import {renderSocialArt, renderVideo} from './render.js';
 import {ensureStorage, readJob, updateJob, writeJob} from './storage.js';
-import type {RenderInput, RenderJob, SocialArtFormat, SocialArtInput, SocialArtJob} from './types.js';
+import type {RenderInput, RenderJob, SocialArtFormat, SocialArtInput, SocialArtJob, SocialArtSlide} from './types.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4788);
@@ -85,6 +85,8 @@ const sanitizeInput = (raw: unknown): RenderInput | null => {
     brand: input.brand ? String(input.brand).slice(0, 80) : 'Toque de Despertar',
     durationSeconds: Number.isFinite(Number(input.durationSeconds)) ? Number(input.durationSeconds) : 30,
     audioUrl: input.audioUrl ? String(input.audioUrl).slice(0, 600) : '',
+    musicUrl: input.musicUrl ? String(input.musicUrl).slice(0, 600) : '',
+    musicVolume: Number.isFinite(Number(input.musicVolume)) ? Math.max(0, Math.min(0.6, Number(input.musicVolume))) : 0.18,
     template,
     sceneSource,
     maxScenes,
@@ -105,9 +107,18 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
   const formats: SocialArtFormat[] = Array.isArray(input.formats)
     ? input.formats
         .map((format) => String(format))
-        .filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format)
+        .filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format || 'portrait' === format)
         .slice(0, 2)
     : defaultFormats;
+  const slides: SocialArtSlide[] = Array.isArray(input.slides)
+    ? input.slides
+        .filter((slide) => slide && typeof slide.title === 'string' && typeof slide.body === 'string')
+        .map((slide) => ({
+          title: String(slide.title).slice(0, 92),
+          body: String(slide.body).slice(0, 160),
+        }))
+        .slice(0, 10)
+    : [];
 
   if (!input.baseImageUrl || !input.title) {
     return null;
@@ -122,6 +133,7 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
     brand: input.brand ? String(input.brand).slice(0, 80) : 'Toque de Despertar',
     formats: formats.length > 0 ? Array.from(new Set(formats)) : defaultFormats,
     template: input.template ? String(input.template).slice(0, 80) : 'editorial-cover-v1',
+    slides,
   };
 };
 
@@ -138,6 +150,7 @@ app.get('/health', requireApiKey, async (_request, response) => {
       capabilities: {
         video: true,
         socialArt: true,
+        socialCarousel: true,
         asyncJobs: true,
         staticMedia: true,
       },
@@ -228,6 +241,7 @@ app.post('/social-art', requireApiKey, async (request, response) => {
         progress: 1,
         squareUrl: result.squareUrl,
         verticalUrl: result.verticalUrl,
+        carouselUrls: result.carouselUrls,
         template: result.template,
       });
     })

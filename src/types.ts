@@ -16,6 +16,8 @@ export type RenderInput = {
   hashtags?: string[];
   durationSeconds?: number;
   audioUrl?: string;
+  musicUrl?: string;
+  musicVolume?: number;
   template?: VideoTemplate;
   sceneSource?: VideoSceneSource;
   maxScenes?: number;
@@ -35,7 +37,12 @@ export type RenderJob = {
   updatedAt: string;
 };
 
-export type SocialArtFormat = 'square' | 'vertical';
+export type SocialArtFormat = 'square' | 'vertical' | 'portrait';
+
+export type SocialArtSlide = {
+  title: string;
+  body: string;
+};
 
 export type SocialArtInput = {
   postId?: number;
@@ -46,11 +53,16 @@ export type SocialArtInput = {
   brand?: string;
   formats?: SocialArtFormat[];
   template?: string;
+  slides?: SocialArtSlide[];
+  layout?: 'cover' | 'narrative';
+  slideIndex?: number;
+  slideCount?: number;
 };
 
 export type SocialArtResult = {
   squareUrl?: string;
   verticalUrl?: string;
+  carouselUrls?: string[];
   template: string;
 };
 
@@ -61,6 +73,7 @@ export type SocialArtJob = {
   input: SocialArtInput;
   squareUrl?: string;
   verticalUrl?: string;
+  carouselUrls?: string[];
   template?: string;
   error?: string;
   createdAt: string;

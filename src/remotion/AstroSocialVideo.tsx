@@ -45,6 +45,29 @@ const templateBackground = (template: string) => {
   return 'radial-gradient(circle at 20% 15%, #f5d56f 0, transparent 20%), linear-gradient(150deg, #151515 0%, #19352c 45%, #5c3159 100%)';
 };
 
+const textLimits = (template: string) => {
+  if ('cover_topics' === template) {
+    return {title: 54, body: 150};
+  }
+
+  if ('narrated_script' === template) {
+    return {title: 62, body: 150};
+  }
+
+  return {title: 58, body: 150};
+};
+
+const truncateText = (value: string, maxLength: number) => {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  const sliced = text.slice(0, Math.max(1, maxLength - 1)).trim();
+  const wordSafe = sliced.replace(/\s+\S*$/, '').trim();
+  return `${wordSafe || sliced}…`;
+};
+
 const SceneCard: React.FC<{
   scene: VideoScene;
   index: number;
@@ -61,6 +84,9 @@ const SceneCard: React.FC<{
       stiffness: 80,
     },
   });
+  const limits = textLimits(template);
+  const title = truncateText(scene.title, limits.title);
+  const body = truncateText(scene.body, limits.body);
 
   return (
     <div
@@ -108,7 +134,7 @@ const SceneCard: React.FC<{
           textShadow: '0 6px 24px rgba(0,0,0,0.42)',
         }}
       >
-        {scene.title}
+        {title}
       </div>
       <div
         style={{
@@ -120,7 +146,7 @@ const SceneCard: React.FC<{
           textShadow: '0 5px 18px rgba(0,0,0,0.36)',
         }}
       >
-        {scene.body}
+        {body}
       </div>
     </div>
   );
@@ -133,6 +159,7 @@ export const AstroSocialVideo: React.FC<RenderInput> = (input) => {
   const template = videoTemplate(input);
   const sceneLength = Math.max(1, Math.floor(durationInFrames / scenes.length));
   const activeScene = Math.min(scenes.length - 1, Math.floor(frame / sceneLength));
+  const musicVolume = Math.max(0, Math.min(0.6, Number(input.musicVolume ?? 0.18)));
   const backgroundShift = interpolate(
     frame,
     [0, durationInFrames],
@@ -228,7 +255,8 @@ export const AstroSocialVideo: React.FC<RenderInput> = (input) => {
         />
       </div>
 
-      {input.audioUrl ? <Audio src={input.audioUrl} volume={0.86} /> : null}
+      {input.musicUrl ? <Audio src={input.musicUrl} volume={musicVolume} loop /> : null}
+      {input.audioUrl ? <Audio src={input.audioUrl} volume={0.92} /> : null}
     </AbsoluteFill>
   );
 };
