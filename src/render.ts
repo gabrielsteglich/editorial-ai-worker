@@ -112,7 +112,10 @@ export const renderVideo = async (jobId: string, input: RenderInput, publicBaseU
 };
 
 const normalizeSocialArtInput = (input: SocialArtInput): SocialArtInput => {
-  const defaultFormats: SocialArtFormat[] = ['square', 'vertical'];
+  const assetScope = ['covers', 'carousel', 'all'].includes(String(input.assetScope))
+    ? input.assetScope
+    : 'all';
+  const defaultFormats: SocialArtFormat[] = 'carousel' === assetScope ? [] : ['square', 'vertical'];
   const formats: SocialArtFormat[] = Array.isArray(input.formats) && input.formats.length > 0
     ? input.formats.filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format || 'portrait' === format)
     : defaultFormats;
@@ -129,6 +132,7 @@ const normalizeSocialArtInput = (input: SocialArtInput): SocialArtInput => {
     subtitle: input.subtitle || '',
     badge: input.badge || 'Astrologia',
     brand: input.brand || 'Toque de Despertar',
+    assetScope,
     formats: formats.length > 0 ? Array.from(new Set(formats)) : defaultFormats,
     template: input.template || 'editorial-cover-v1',
     slides,

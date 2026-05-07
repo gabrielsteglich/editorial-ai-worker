@@ -51,6 +51,7 @@ export type SocialArtInput = {
   subtitle?: string;
   badge?: string;
   brand?: string;
+  assetScope?: 'covers' | 'carousel' | 'all';
   formats?: SocialArtFormat[];
   template?: string;
   slides?: SocialArtSlide[];

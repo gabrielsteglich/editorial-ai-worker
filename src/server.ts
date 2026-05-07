@@ -103,7 +103,10 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
   }
 
   const input = raw as Partial<SocialArtInput>;
-  const defaultFormats: SocialArtFormat[] = ['square', 'vertical'];
+  const assetScope = ['covers', 'carousel', 'all'].includes(String(input.assetScope))
+    ? String(input.assetScope) as NonNullable<SocialArtInput['assetScope']>
+    : 'all';
+  const defaultFormats: SocialArtFormat[] = 'carousel' === assetScope ? [] : ['square', 'vertical'];
   const formats: SocialArtFormat[] = Array.isArray(input.formats)
     ? input.formats
         .map((format) => String(format))
@@ -124,6 +127,10 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
     return null;
   }
 
+  if ((formats.length === 0) && slides.length === 0) {
+    return null;
+  }
+
   return {
     postId: Number.isFinite(Number(input.postId)) ? Number(input.postId) : undefined,
     baseImageUrl: String(input.baseImageUrl).slice(0, 900),
@@ -131,6 +138,7 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
     subtitle: input.subtitle ? String(input.subtitle).slice(0, 180) : '',
     badge: input.badge ? String(input.badge).slice(0, 60) : 'Astrologia',
     brand: input.brand ? String(input.brand).slice(0, 80) : 'Toque de Despertar',
+    assetScope,
     formats: formats.length > 0 ? Array.from(new Set(formats)) : defaultFormats,
     template: input.template ? String(input.template).slice(0, 80) : 'editorial-cover-v1',
     slides,
