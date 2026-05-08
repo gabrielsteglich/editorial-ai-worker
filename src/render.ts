@@ -115,15 +115,27 @@ const normalizeSocialArtInput = (input: SocialArtInput): SocialArtInput => {
   const assetScope = ['covers', 'carousel', 'all'].includes(String(input.assetScope))
     ? input.assetScope
     : 'all';
-  const defaultFormats: SocialArtFormat[] = 'carousel' === assetScope ? [] : ['square', 'vertical'];
-  const formats: SocialArtFormat[] = Array.isArray(input.formats) && input.formats.length > 0
+  const requestedFormats: SocialArtFormat[] = Array.isArray(input.formats) && input.formats.length > 0
     ? input.formats.filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format || 'portrait' === format)
-    : defaultFormats;
-  const slides: SocialArtSlide[] = Array.isArray(input.slides)
+    : [];
+  const requestedSlides: SocialArtSlide[] = Array.isArray(input.slides)
     ? input.slides
         .filter((slide) => slide && typeof slide.title === 'string' && typeof slide.body === 'string')
+        .map((slide) => ({
+          title: String(slide.title).slice(0, 92),
+          body: String(slide.body).slice(0, 160),
+          imageUrl: slide.imageUrl ? String(slide.imageUrl).slice(0, 900) : undefined,
+        }))
         .slice(0, 10)
     : [];
+  const formats: SocialArtFormat[] = assetScope === 'carousel'
+    ? []
+    : requestedFormats.length > 0
+      ? Array.from(new Set(requestedFormats))
+      : ['square', 'vertical'];
+  const slides: SocialArtSlide[] = assetScope === 'covers'
+    ? []
+    : requestedSlides;
 
   return {
     postId: input.postId,
@@ -133,7 +145,7 @@ const normalizeSocialArtInput = (input: SocialArtInput): SocialArtInput => {
     badge: input.badge || 'Astrologia',
     brand: input.brand || 'Toque de Despertar',
     assetScope,
-    formats: formats.length > 0 ? Array.from(new Set(formats)) : defaultFormats,
+    formats,
     template: input.template || 'editorial-cover-v1',
     slides,
     layout: input.layout || 'cover',
@@ -186,26 +198,29 @@ export const renderSocialArt = async (jobId: string, input: SocialArtInput, publ
   if (normalizedInput.slides && normalizedInput.slides.length > 0) {
     result.carouselUrls = [];
     const base = publicBaseUrl.replace(/\/$/, '');
-    const composition = await selectComposition({
-      serveUrl,
-      id: socialArtCompositionIds.portrait,
-      inputProps: {...normalizedInput, format: 'portrait'},
-    });
 
     for (const [index, slide] of normalizedInput.slides.entries()) {
       const outputLocation = path.join(mediaDir, `${jobId}-carousel-${index + 1}.jpg`);
+      const slideInput: SocialArtInput & {format: 'portrait'} = {
+        ...normalizedInput,
+        format: 'portrait',
+        layout: 'narrative',
+        slideIndex: index,
+        slideCount: normalizedInput.slides.length,
+        baseImageUrl: slide.imageUrl || normalizedInput.baseImageUrl,
+        title: slide.title,
+        subtitle: slide.body,
+      };
+      const composition = await selectComposition({
+        serveUrl,
+        id: socialArtCompositionIds.portrait,
+        inputProps: slideInput,
+      });
+
       await renderStill({
         composition,
         serveUrl,
-        inputProps: {
-          ...normalizedInput,
-          format: 'portrait',
-          layout: 'narrative',
-          slideIndex: index,
-          slideCount: normalizedInput.slides.length,
-          title: slide.title,
-          subtitle: slide.body,
-        },
+        inputProps: slideInput,
         output: outputLocation,
         frame: 0,
         imageFormat: 'jpeg',

@@ -42,6 +42,7 @@ export type SocialArtFormat = 'square' | 'vertical' | 'portrait';
 export type SocialArtSlide = {
   title: string;
   body: string;
+  imageUrl?: string;
 };
 
 export type SocialArtInput = {

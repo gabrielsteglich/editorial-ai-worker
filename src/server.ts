@@ -106,28 +106,40 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
   const assetScope = ['covers', 'carousel', 'all'].includes(String(input.assetScope))
     ? String(input.assetScope) as NonNullable<SocialArtInput['assetScope']>
     : 'all';
-  const defaultFormats: SocialArtFormat[] = 'carousel' === assetScope ? [] : ['square', 'vertical'];
-  const formats: SocialArtFormat[] = Array.isArray(input.formats)
+  const requestedFormats: SocialArtFormat[] = Array.isArray(input.formats)
     ? input.formats
         .map((format) => String(format))
         .filter((format): format is SocialArtFormat => 'square' === format || 'vertical' === format || 'portrait' === format)
         .slice(0, 2)
-    : defaultFormats;
-  const slides: SocialArtSlide[] = Array.isArray(input.slides)
+    : [];
+  const requestedSlides: SocialArtSlide[] = Array.isArray(input.slides)
     ? input.slides
         .filter((slide) => slide && typeof slide.title === 'string' && typeof slide.body === 'string')
         .map((slide) => ({
           title: String(slide.title).slice(0, 92),
           body: String(slide.body).slice(0, 160),
+          imageUrl: slide.imageUrl ? String(slide.imageUrl).slice(0, 900) : undefined,
         }))
         .slice(0, 10)
     : [];
+  const formats: SocialArtFormat[] = assetScope === 'carousel'
+    ? []
+    : requestedFormats.length > 0
+      ? Array.from(new Set(requestedFormats))
+      : ['square', 'vertical'];
+  const slides: SocialArtSlide[] = assetScope === 'covers'
+    ? []
+    : requestedSlides;
 
   if (!input.baseImageUrl || !input.title) {
     return null;
   }
 
-  if ((formats.length === 0) && slides.length === 0) {
+  if ((assetScope === 'carousel' || assetScope === 'all') && slides.length === 0 && formats.length === 0) {
+    return null;
+  }
+
+  if (assetScope === 'carousel' && slides.length === 0) {
     return null;
   }
 
@@ -139,7 +151,7 @@ const sanitizeSocialArtInput = (raw: unknown): SocialArtInput | null => {
     badge: input.badge ? String(input.badge).slice(0, 60) : 'Astrologia',
     brand: input.brand ? String(input.brand).slice(0, 80) : 'Toque de Despertar',
     assetScope,
-    formats: formats.length > 0 ? Array.from(new Set(formats)) : defaultFormats,
+    formats,
     template: input.template ? String(input.template).slice(0, 80) : 'editorial-cover-v1',
     slides,
   };

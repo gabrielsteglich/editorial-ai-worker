@@ -64,16 +64,37 @@ export const SocialArtCover: React.FC<SocialArtInput & {format?: 'square' | 'ver
     return (
       <AbsoluteFill
         style={{
-          background: palette.base,
+          background: '#11130f',
           color: '#fffaf0',
           overflow: 'hidden',
           fontFamily: 'Arial, Helvetica, sans-serif',
         }}
       >
+        <AbsoluteFill>
+          <Img
+            src={input.baseImageUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: `${18 + (slideIndex % 4) * 22}% ${20 + (slideIndex % 3) * 18}%`,
+              filter: `saturate(${0.74 + (slideIndex % 3) * 0.08}) contrast(1.02) brightness(${0.68 + (slideIndex % 2) * 0.05})`,
+              transform: `scale(${1.08 + (slideIndex % 3) * 0.04})`,
+            }}
+          />
+        </AbsoluteFill>
+        <AbsoluteFill
+          style={{
+            background: palette.base,
+            opacity: 0.66,
+            mixBlendMode: 'multiply',
+          }}
+        />
         <AbsoluteFill
           style={{
             background: palette.glow,
-            opacity: 0.95,
+            opacity: 0.82,
+            mixBlendMode: 'screen',
           }}
         />
         <AbsoluteFill
